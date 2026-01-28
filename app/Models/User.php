@@ -2,20 +2,16 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Campos que podem ser preenchidos em massa
      */
     protected $fillable = [
         'name',
@@ -26,9 +22,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Campos ocultos
      */
     protected $hidden = [
         'password',
@@ -36,15 +30,55 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Casts
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONAMENTOS
+    |--------------------------------------------------------------------------
+    */
+
+    // Chamados que o usuário abriu
+    public function tickets()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Ticket::class, 'user_id');
+    }
+
+    // Chamados atribuídos a ele (técnico)
+    public function assignedTickets()
+    {
+        return $this->hasMany(Ticket::class, 'assigned_to');
+    }
+
+    // Mensagens que ele escreveu nos chamados
+    public function ticketMessages()
+    {
+        return $this->hasMany(TicketMessage::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HELPERS DE PERFIL (RBAC SIMPLES)
+    |--------------------------------------------------------------------------
+    */
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isTecnico(): bool
+    {
+        return $this->role === 'tecnico';
+    }
+
+    public function isFuncionario(): bool
+    {
+        return $this->role === 'funcionario';
     }
 }
