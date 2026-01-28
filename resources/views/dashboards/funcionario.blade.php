@@ -42,12 +42,14 @@
             </div>
 
             {{-- Estatísticas --}}
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                 @foreach ([
-                    ['Meus chamados', $stats['total'] ?? 0],
+                    ['Meus chamados', $stats['meus_chamados'] ?? 0],
                     ['Abertos', $stats['abertos'] ?? 0],
                     ['Em atendimento', $stats['em_atendimento'] ?? 0],
+                    ['Aguardando', $stats['aguardando'] ?? 0],
                     ['Resolvidos', $stats['resolvidos'] ?? 0],
+                    ['Fechados', $stats['fechados'] ?? 0],
                 ] as $stat)
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
@@ -186,9 +188,15 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-5">
+                    <a
+                        :href="selected ? `/tickets/${selected.id}` : '#'"
+                        class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90"
+                    >
+                        Ver chamado
+                    </a>
                     <button type="button"
                             @click="detailOpen = false"
-                            class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90">
+                            class="px-4 py-2 rounded-lg bg-gray-100 text-sm text-gray-700 hover:bg-gray-200">
                         Fechar
                     </button>
                 </div>

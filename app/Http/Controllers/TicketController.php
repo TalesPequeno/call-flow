@@ -8,6 +8,25 @@ use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
+    public function show(Request $request, Ticket $ticket)
+    {
+        $user = $request->user();
+
+        $isOwner = $ticket->user_id === $user->id;
+        $isTechnician = $ticket->assigned_to === $user->id;
+        $isAdmin = $user->role === 'admin';
+
+        if (!($isOwner || $isTechnician || $isAdmin)) {
+            abort(403);
+        }
+
+        $ticket->load(['owner', 'technician', 'messages.user']);
+
+        return view('tickets.show', [
+            'ticket' => $ticket,
+        ]);
+    }
+
     public function store(StoreTicketRequest $request)
     {
         $data = $request->validated();
@@ -30,18 +49,20 @@ class TicketController extends Controller
 
     public function respond(Request $request, Ticket $ticket)
     {
-        if ($request->user()->role !== 'tecnico') {
+        $user = $request->user();
+
+        if (!in_array($user->role, ['tecnico', 'admin'], true)) {
             abort(403);
         }
 
-        if ($ticket->assigned_to && $ticket->assigned_to !== $request->user()->id) {
+        if ($user->role === 'tecnico' && $ticket->assigned_to && $ticket->assigned_to !== $user->id) {
             abort(403);
         }
 
-        if (!$ticket->assigned_to && $ticket->status === 'aberto') {
+        if ($user->role === 'tecnico' && !$ticket->assigned_to && $ticket->status === 'aberto') {
             $ticket->update([
                 'status' => 'em_atendimento',
-                'assigned_to' => $request->user()->id,
+                'assigned_to' => $user->id,
             ]);
         }
 
@@ -54,7 +75,13 @@ class TicketController extends Controller
 
     public function storeMessage(Request $request, Ticket $ticket)
     {
-        if ($request->user()->role !== 'tecnico') {
+        $user = $request->user();
+
+        $isOwner = $ticket->user_id === $user->id;
+        $isTechnician = $ticket->assigned_to === $user->id;
+        $isAdmin = $user->role === 'admin';
+
+        if (!($isOwner || $isTechnician || $isAdmin)) {
             abort(403);
         }
 
@@ -65,19 +92,29 @@ class TicketController extends Controller
         $isFirstMessage = $ticket->messages()->count() === 0;
 
         $ticket->messages()->create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'message' => $data['message'],
         ]);
 
-        if ($isFirstMessage) {
+        if ($isFirstMessage && $user->role === 'tecnico') {
             $ticket->update([
                 'status' => 'em_atendimento',
-                'assigned_to' => $request->user()->id,
+                'assigned_to' => $user->id,
             ]);
         }
 
+        if ($user->role === 'funcionario') {
+            $ticket->update([
+                'status' => 'aguardando',
+            ]);
+        }
+
+        $redirectRoute = ($user->role === 'tecnico' || $user->role === 'admin')
+            ? 'tickets.respond'
+            : 'tickets.show';
+
         return redirect()
-            ->route('tickets.respond', $ticket)
+            ->route($redirectRoute, $ticket)
             ->with('success', 'Resposta enviada com sucesso!');
     }
 }

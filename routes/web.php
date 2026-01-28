@@ -13,6 +13,7 @@ Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verif
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::get('/tickets/{ticket}/responder', [TicketController::class, 'respond'])->name('tickets.respond');
     Route::post('/tickets/{ticket}/mensagens', [TicketController::class, 'storeMessage'])->name('tickets.messages.store');
 });
