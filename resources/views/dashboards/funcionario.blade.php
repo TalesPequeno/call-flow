@@ -62,9 +62,9 @@
                         </button>
                     </div>
 
-                    <div class="mt-4 space-y-3">
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         @forelse ($tickets as $ticket)
-                            <div class="border rounded-lg p-4 flex items-start justify-between gap-4">
+                            <div class="border rounded-lg p-4 flex items-start justify-between gap-4 h-full">
                                 <div class="min-w-0">
                                     <p class="font-semibold text-gray-900 truncate">
                                         {{ $ticket->title }}
