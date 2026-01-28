@@ -248,7 +248,7 @@
 
                 <div class="flex items-center justify-end gap-3 pt-5">
                     <a
-                        :href="selected ? `/tickets/${selected.id}/responder` : '#'"
+                        :href="selected ? `/tickets/${selected.id}` : '#'"
                         class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90"
                     >
                         <span x-text="primaryActionLabel"></span>

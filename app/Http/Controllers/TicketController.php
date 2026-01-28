@@ -20,6 +20,13 @@ class TicketController extends Controller
             abort(403);
         }
 
+        if ($user->role === 'tecnico' && !$ticket->assigned_to && $ticket->status === 'aberto') {
+            $ticket->update([
+                'status' => 'em_atendimento',
+                'assigned_to' => $user->id,
+            ]);
+        }
+
         $ticket->load(['owner', 'technician', 'messages.user']);
 
         return view('tickets.show', [
@@ -47,32 +54,6 @@ class TicketController extends Controller
             ->with('success', 'Chamado criado com sucesso!');
     }
 
-    public function respond(Request $request, Ticket $ticket)
-    {
-        $user = $request->user();
-
-        if (!in_array($user->role, ['tecnico', 'admin'], true)) {
-            abort(403);
-        }
-
-        if ($user->role === 'tecnico' && $ticket->assigned_to && $ticket->assigned_to !== $user->id) {
-            abort(403);
-        }
-
-        if ($user->role === 'tecnico' && !$ticket->assigned_to && $ticket->status === 'aberto') {
-            $ticket->update([
-                'status' => 'em_atendimento',
-                'assigned_to' => $user->id,
-            ]);
-        }
-
-        $ticket->load(['owner', 'technician', 'messages.user']);
-
-        return view('tickets.respond', [
-            'ticket' => $ticket,
-        ]);
-    }
-
     public function storeMessage(Request $request, Ticket $ticket)
     {
         $user = $request->user();
@@ -96,25 +77,23 @@ class TicketController extends Controller
             'message' => $data['message'],
         ]);
 
-        if ($isFirstMessage && $user->role === 'tecnico') {
+        if ($user->role === 'tecnico') {
             $ticket->update([
                 'status' => 'em_atendimento',
-                'assigned_to' => $user->id,
+                'assigned_to' => $isFirstMessage ? $user->id : $ticket->assigned_to,
             ]);
-        }
-
-        if ($user->role === 'funcionario') {
+        } elseif ($user->role === 'admin') {
+            $ticket->update([
+                'status' => 'em_atendimento',
+            ]);
+        } elseif ($user->role === 'funcionario') {
             $ticket->update([
                 'status' => 'aguardando',
             ]);
         }
 
-        $redirectRoute = ($user->role === 'tecnico' || $user->role === 'admin')
-            ? 'tickets.respond'
-            : 'tickets.show';
-
         return redirect()
-            ->route($redirectRoute, $ticket)
+            ->route('tickets.show', $ticket)
             ->with('success', 'Resposta enviada com sucesso!');
     }
 }

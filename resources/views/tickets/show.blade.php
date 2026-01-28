@@ -48,14 +48,22 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold">Histórico</h3>
 
+                    @php
+                        $authId = auth()->id();
+                    @endphp
                     <div class="mt-4 space-y-3">
                         @forelse ($ticket->messages as $message)
-                            <div class="rounded-lg border p-4">
-                                <div class="flex items-center justify-between text-xs text-gray-500">
-                                    <span>{{ $message->user?->name ?? 'Usuário' }}</span>
-                                    <span>{{ $message->created_at->format('d/m/Y H:i') }}</span>
+                            @php
+                                $isMine = $authId && $message->user_id === $authId;
+                            @endphp
+                            <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
+                                <div class="max-w-[80%] rounded-2xl px-4 py-3 shadow-sm {{ $isMine ? 'bg-green-50 text-gray-900' : 'bg-gray-100 text-gray-900' }}">
+                                    <div class="flex items-center justify-between gap-3 text-[11px] text-gray-500">
+                                        <span>{{ $message->user?->name ?? 'Usuário' }}</span>
+                                        <span>{{ $message->created_at->format('d/m/Y H:i') }}</span>
+                                    </div>
+                                    <p class="mt-2 text-sm whitespace-pre-line">{{ $message->message }}</p>
                                 </div>
-                                <p class="mt-2 text-sm text-gray-800 whitespace-pre-line">{{ $message->message }}</p>
                             </div>
                         @empty
                             <div class="rounded-lg border bg-gray-50 p-4 text-sm text-gray-600">
