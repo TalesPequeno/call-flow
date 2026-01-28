@@ -38,10 +38,12 @@ class DashboardController extends Controller
             $myTicketsQuery = Ticket::where('assigned_to', $user->id);
 
             $stats = [
+                'meus_chamados' => (clone $myTicketsQuery)->count(),
                 'abertos' => (clone $openTicketsQuery)->count(),
                 'em_atendimento' => (clone $myTicketsQuery)->status('em_atendimento')->count(),
                 'aguardando' => (clone $myTicketsQuery)->status('aguardando')->count(),
                 'resolvidos' => (clone $myTicketsQuery)->status('resolvido')->count(),
+                'fechados' => (clone $myTicketsQuery)->status('fechado')->count(),
             ];
 
             $openTickets = (clone $openTicketsQuery)

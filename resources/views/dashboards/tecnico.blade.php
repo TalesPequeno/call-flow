@@ -5,6 +5,13 @@
         openDetail(ticket) {
             this.selected = ticket;
             this.detailOpen = true;
+        },
+        get primaryActionLabel() {
+            if (!this.selected) return 'Responder chamado';
+            if (this.selected.status_raw === 'aberto' && !this.selected.assigned_to) {
+                return 'Assumir chamado';
+            }
+            return 'Responder chamado';
         }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -22,12 +29,14 @@
             </div>
 
             {{-- Estatísticas --}}
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                 @foreach ([
+                    ['Meus chamados', $stats['meus_chamados'] ?? 0],
                     ['Abertos', $stats['abertos'] ?? 0],
                     ['Em atendimento', $stats['em_atendimento'] ?? 0],
                     ['Aguardando', $stats['aguardando'] ?? 0],
                     ['Resolvidos', $stats['resolvidos'] ?? 0],
+                    ['Fechados', $stats['fechados'] ?? 0],
                 ] as $stat)
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
@@ -36,79 +45,6 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-
-            {{-- Chamados abertos --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Chamados abertos</h3>
-                    </div>
-
-                    <div class="mt-4 overflow-x-auto rounded-lg border">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gray-50 text-gray-600">
-                                <tr>
-                                    <th class="px-3 py-2 text-left font-medium">Título</th>
-                                    <th class="px-3 py-2 text-left font-medium">Status</th>
-                                    <th class="px-3 py-2 text-left font-medium">Prioridade</th>
-                                    <th class="px-3 py-2 text-left font-medium">Setor</th>
-                                    <th class="px-3 py-2 text-left font-medium">Criado em</th>
-                                    <th class="px-3 py-2 text-right font-medium">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                @forelse ($openTickets as $ticket)
-                                    <tr class="group hover:bg-gray-50">
-                                        <td class="px-3 py-2">
-                                            <div class="font-semibold text-gray-900">
-                                                {{ $ticket->title }}
-                                            </div>
-                                        </td>
-                                        <td class="px-3 py-2 text-gray-700">
-                                            {{ str_replace('_', ' ', $ticket->status) }}
-                                        </td>
-                                        <td class="px-3 py-2 text-gray-700">
-                                            {{ $ticket->priority }}
-                                        </td>
-                                        <td class="px-3 py-2 text-gray-700">
-                                            {{ $ticket->sector ?? '-' }}
-                                        </td>
-                                        <td class="px-3 py-2 text-gray-500 whitespace-nowrap">
-                                            {{ $ticket->created_at->format('d/m/Y H:i') }}
-                                        </td>
-                                        <td class="px-3 py-2 text-right">
-                                            <button
-                                                type="button"
-                                                @click="openDetail({
-                                                    id: {{ $ticket->id }},
-                                                    title: @js($ticket->title),
-                                                    description: @js($ticket->description),
-                                                    status: @js(str_replace('_', ' ', $ticket->status)),
-                                                    priority: @js($ticket->priority),
-                                                    sector: @js($ticket->sector),
-                                                    created_at: @js($ticket->created_at->format('d/m/Y H:i'))
-                                                })"
-                                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-900"
-                                                title="Ver detalhes">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-                                                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5Zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"/>
-                                                    <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/>
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="px-3 py-4 text-center text-gray-600">
-                                            Não há chamados abertos no momento.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
 
             {{-- Meus atendimentos --}}
@@ -158,8 +94,10 @@
                                                     title: @js($ticket->title),
                                                     description: @js($ticket->description),
                                                     status: @js(str_replace('_', ' ', $ticket->status)),
+                                                    status_raw: @js($ticket->status),
                                                     priority: @js($ticket->priority),
                                                     sector: @js($ticket->sector),
+                                                    assigned_to: @js($ticket->assigned_to),
                                                     created_at: @js($ticket->created_at->format('d/m/Y H:i'))
                                                 })"
                                                 class="inline-flex items-center justify-center rounded-md p-2 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-900"
@@ -175,6 +113,81 @@
                                     <tr>
                                         <td colspan="6" class="px-3 py-4 text-center text-gray-600">
                                             Você ainda não tem chamados em atendimento.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Chamados abertos --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Chamados abertos</h3>
+                    </div>
+
+                    <div class="mt-4 overflow-x-auto rounded-lg border">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 text-gray-600">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium">Título</th>
+                                    <th class="px-3 py-2 text-left font-medium">Status</th>
+                                    <th class="px-3 py-2 text-left font-medium">Prioridade</th>
+                                    <th class="px-3 py-2 text-left font-medium">Setor</th>
+                                    <th class="px-3 py-2 text-left font-medium">Criado em</th>
+                                    <th class="px-3 py-2 text-right font-medium">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse ($openTickets as $ticket)
+                                    <tr class="group hover:bg-gray-50">
+                                        <td class="px-3 py-2">
+                                            <div class="font-semibold text-gray-900">
+                                                {{ $ticket->title }}
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-gray-700">
+                                            {{ str_replace('_', ' ', $ticket->status) }}
+                                        </td>
+                                        <td class="px-3 py-2 text-gray-700">
+                                            {{ $ticket->priority }}
+                                        </td>
+                                        <td class="px-3 py-2 text-gray-700">
+                                            {{ $ticket->sector ?? '-' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-gray-500 whitespace-nowrap">
+                                            {{ $ticket->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                        <td class="px-3 py-2 text-right">
+                                            <button
+                                                type="button"
+                                                @click="openDetail({
+                                                    id: {{ $ticket->id }},
+                                                    title: @js($ticket->title),
+                                                    description: @js($ticket->description),
+                                                    status: @js(str_replace('_', ' ', $ticket->status)),
+                                                    status_raw: @js($ticket->status),
+                                                    priority: @js($ticket->priority),
+                                                    sector: @js($ticket->sector),
+                                                    assigned_to: @js($ticket->assigned_to),
+                                                    created_at: @js($ticket->created_at->format('d/m/Y H:i'))
+                                                })"
+                                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-900"
+                                                title="Ver detalhes">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+                                                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5Zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"/>
+                                                    <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-3 py-4 text-center text-gray-600">
+                                            Não há chamados abertos no momento.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -234,9 +247,15 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-5">
+                    <a
+                        :href="selected ? `/tickets/${selected.id}/responder` : '#'"
+                        class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90"
+                    >
+                        <span x-text="primaryActionLabel"></span>
+                    </a>
                     <button type="button"
                             @click="detailOpen = false"
-                            class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90">
+                            class="px-4 py-2 rounded-lg bg-gray-100 text-sm text-gray-700 hover:bg-gray-200">
                         Fechar
                     </button>
                 </div>
