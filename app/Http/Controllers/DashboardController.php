@@ -33,6 +33,36 @@ class DashboardController extends Controller
             ]);
         }
 
+        if ($user->role === 'tecnico') {
+            $openTicketsQuery = Ticket::status('aberto');
+            $myTicketsQuery = Ticket::where('assigned_to', $user->id);
+
+            $stats = [
+                'abertos' => (clone $openTicketsQuery)->count(),
+                'em_atendimento' => (clone $myTicketsQuery)->status('em_atendimento')->count(),
+                'aguardando' => (clone $myTicketsQuery)->status('aguardando')->count(),
+                'resolvidos' => (clone $myTicketsQuery)->status('resolvido')->count(),
+            ];
+
+            $openTickets = (clone $openTicketsQuery)
+                ->latest()
+                ->take(6)
+                ->get();
+
+            $myTickets = (clone $myTicketsQuery)
+                ->whereIn('status', ['em_atendimento', 'aguardando'])
+                ->latest()
+                ->take(6)
+                ->get();
+
+            return view('dashboards.tecnico', [
+                'user' => $user,
+                'stats' => $stats,
+                'openTickets' => $openTickets,
+                'myTickets' => $myTickets,
+            ]);
+        }
+
         return view('dashboard', [
             'user' => $user,
         ]);
