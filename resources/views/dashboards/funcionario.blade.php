@@ -33,13 +33,13 @@
                 </div>
             </div>
 
-            {{-- Estatísticas (placeholder por enquanto) --}}
+            {{-- Estatísticas --}}
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([
-                    ['Meus chamados', '0'],
-                    ['Abertos', '0'],
-                    ['Em atendimento', '0'],
-                    ['Resolvidos', '0'],
+                    ['Meus chamados', $stats['total'] ?? 0],
+                    ['Abertos', $stats['abertos'] ?? 0],
+                    ['Em atendimento', $stats['em_atendimento'] ?? 0],
+                    ['Resolvidos', $stats['resolvidos'] ?? 0],
                 ] as $stat)
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
