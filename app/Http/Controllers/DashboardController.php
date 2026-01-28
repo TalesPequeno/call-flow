@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -11,9 +12,14 @@ class DashboardController extends Controller
         $user = $request->user();
 
         if ($user->role === 'funcionario') {
+            $tickets = Ticket::forUser($user->id)
+                ->latest()
+                ->take(5)
+                ->get();
+
             return view('dashboards.funcionario', [
                 'user' => $user,
-                // 'tickets' => $tickets,
+                'tickets' => $tickets,
             ]);
         }
 
