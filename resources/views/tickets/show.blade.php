@@ -44,15 +44,26 @@
                 </div>
             </div>
 
+            @php
+                $authId = auth()->id();
+                $user = auth()->user();
+                $canRespond = $user && (
+                    $ticket->user_id === $user->id ||
+                    $ticket->assigned_to === $user->id ||
+                    $user->role === 'admin'
+                );
+            @endphp
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold">Histórico</h3>
+                    <h3 class="text-lg font-semibold">Conversa</h3>
 
-                    @php
-                        $authId = auth()->id();
-                    @endphp
-                    <div class="mt-4 space-y-3">
-                        @forelse ($ticket->messages as $message)
+                    <div
+                        class="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2"
+                        x-data
+                        x-init="$el.scrollTop = $el.scrollHeight"
+                    >
+                        @forelse ($ticket->messages->reverse() as $message)
                             @php
                                 $isMine = $authId && $message->user_id === $authId;
                             @endphp
@@ -71,44 +82,31 @@
                             </div>
                         @endforelse
                     </div>
+
+                    @if ($canRespond)
+                        <div class="mt-6 border-t pt-4">
+                            <form method="POST" action="{{ route('tickets.messages.store', $ticket) }}" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Mensagem *</label>
+                                    <textarea name="message" rows="3" required
+                                              class="mt-2 w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900">{{ old('message') }}</textarea>
+                                    @error('message')
+                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="flex items-center justify-end gap-3">
+                                    <button type="submit"
+                                            class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm hover:opacity-90">
+                                        Enviar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
                 </div>
             </div>
-
-            @php
-                $user = auth()->user();
-                $canRespond = $user && (
-                    $ticket->user_id === $user->id ||
-                    $ticket->assigned_to === $user->id ||
-                    $user->role === 'admin'
-                );
-            @endphp
-
-            @if ($canRespond)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold">Responder chamado</h3>
-
-                        <form method="POST" action="{{ route('tickets.messages.store', $ticket) }}" class="mt-4 space-y-4">
-                            @csrf
-                            <div>
-                                <label class="block text-sm font-medium text-gray-600">Mensagem *</label>
-                                <textarea name="message" rows="4" required
-                                          class="mt-2 w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900">{{ old('message') }}</textarea>
-                                @error('message')
-                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="flex items-center justify-end gap-3">
-                                <button type="submit"
-                                        class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm hover:opacity-90">
-                                    Enviar resposta
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            @endif
 
             <div class="flex items-center justify-end">
                 <a href="{{ route('dashboard') }}"
