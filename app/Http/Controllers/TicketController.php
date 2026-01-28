@@ -66,8 +66,15 @@ class TicketController extends Controller
             abort(403);
         }
 
+        if (in_array($ticket->status, ['resolvido', 'fechado'], true)) {
+            return redirect()
+                ->route('tickets.show', $ticket)
+                ->with('success', 'Este chamado está encerrado e não aceita novas mensagens.');
+        }
+
         $data = $request->validate([
             'message' => ['required', 'string'],
+            'status' => ['nullable', 'in:resolvido,fechado'],
         ]);
 
         $isFirstMessage = $ticket->messages()->count() === 0;
@@ -90,6 +97,14 @@ class TicketController extends Controller
             $ticket->update([
                 'status' => 'aguardando',
             ]);
+        }
+
+        if ($data['status'] ?? null) {
+            if (in_array($user->role, ['tecnico', 'admin'], true)) {
+                $ticket->update([
+                    'status' => $data['status'],
+                ]);
+            }
         }
 
         return redirect()

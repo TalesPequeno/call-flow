@@ -2,6 +2,48 @@
     <div class="py-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+            @php
+                $user = auth()->user();
+                $isClosed = in_array($ticket->status, ['resolvido', 'fechado'], true);
+                $canManageStatus = $user && in_array($user->role, ['tecnico', 'admin'], true) && !$isClosed;
+            @endphp
+            <div class="flex items-center justify-end gap-3">
+                @if ($canManageStatus)
+                    <div x-data="{ open: false }" class="relative">
+                        <button type="button"
+                                @click="open = !open"
+                                class="px-4 py-2 rounded-lg bg-gray-100 text-sm text-gray-700 hover:bg-gray-200">
+                            Ações
+                        </button>
+                        <div x-show="open"
+                             @click.away="open = false"
+                             x-transition.origin.top.left
+                             class="absolute left-0 mt-2 w-44 rounded-lg border bg-white shadow-lg z-10">
+                            <form method="POST" action="{{ route('tickets.messages.store', $ticket) }}" class="py-1">
+                                @csrf
+                                <input type="hidden" name="message" value="Status alterado para resolvido.">
+                                <input type="hidden" name="status" value="resolvido">
+                                <button type="submit" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                                    Marcar como resolvido
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('tickets.messages.store', $ticket) }}" class="py-1">
+                                @csrf
+                                <input type="hidden" name="message" value="Status alterado para fechado.">
+                                <input type="hidden" name="status" value="fechado">
+                                <button type="submit" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                                    Marcar como fechado
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+                <a href="{{ route('dashboard') }}"
+                   class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90">
+                    Voltar ao dashboard
+                </a>
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex items-start justify-between gap-4">
@@ -47,7 +89,8 @@
             @php
                 $authId = auth()->id();
                 $user = auth()->user();
-                $canRespond = $user && (
+                $isClosed = in_array($ticket->status, ['resolvido', 'fechado'], true);
+                $canRespond = $user && !$isClosed && (
                     $ticket->user_id === $user->id ||
                     $ticket->assigned_to === $user->id ||
                     $user->role === 'admin'
@@ -106,13 +149,6 @@
                         </div>
                     @endif
                 </div>
-            </div>
-
-            <div class="flex items-center justify-end">
-                <a href="{{ route('dashboard') }}"
-                   class="px-4 py-2 rounded-lg bg-gray-900 text-sm text-white hover:opacity-90">
-                    Voltar ao dashboard
-                </a>
             </div>
 
         </div>
